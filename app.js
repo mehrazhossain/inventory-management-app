@@ -83,6 +83,22 @@ const productSchema = mongoose.Schema(
   }
 );
 
+// mongoose middleware for saving data: pre / post
+
+productSchema.pre('save', function (next) {
+  if (this.quantity == 0) {
+    this.status = 'out-of-stock';
+  }
+
+  next();
+});
+
+productSchema.post('save', function (doc, next) {
+  console.log('After saving data');
+
+  next();
+});
+
 // Model
 const Product = mongoose.model('Product', productSchema);
 
@@ -100,11 +116,6 @@ app.post('/api/v1/product', async (req, res, next) => {
 
     // there is 2 way to insert data 1. save (require instance which is given below) and 2. create (does not require extra instance)
     const product = new Product(req.body);
-
-    // instance creation -> do something before-> save()
-    if (product.quantity === 0) {
-      product.status = 'out-of-stock';
-    }
 
     const result = await product.save();
 
