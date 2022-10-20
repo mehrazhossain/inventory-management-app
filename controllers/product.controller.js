@@ -1,3 +1,4 @@
+const { match } = require('assert');
 const {
   getProductsService,
   createProductService,
@@ -9,11 +10,20 @@ const {
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const filters = { ...req.query };
+    let filters = { ...req.query };
 
     // sort, page, limit -> exclude
     const excludeFields = ['sort', 'page', 'limit'];
     excludeFields.forEach((field) => delete filters[field]);
+
+    // operators -> gt, lt, gte, lte
+    let filtersString = JSON.stringify(filters);
+    filtersString = filtersString.replace(
+      /\b(gt|gte|lt|lte)\b/g,
+      (match) => `$${match}`
+    );
+
+    filters = JSON.parse(filtersString);
 
     const queries = {};
 
