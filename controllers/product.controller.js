@@ -9,17 +9,27 @@ const {
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const queryObject = { ...req.query };
+    const filters = { ...req.query };
 
     // sort, page, limit -> exclude
     const excludeFields = ['sort', 'page', 'limit'];
+    excludeFields.forEach((field) => delete filters[field]);
 
-    excludeFields.forEach((field) => delete queryObject[field]);
+    const queries = {};
 
-    // console.log('original query object', req.query);
-    // console.log('query object', queryObject);
+    if (req.query.sort) {
+      // price,quantity -> 'price quantity'
+      const sortBy = req.query.sort.split(',').join(' ');
+      queries.sortBy = sortBy;
+      console.log(sortBy);
+    }
 
-    const products = await getProductsService(queryObject);
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      queries.fields = fields;
+    }
+
+    const products = await getProductsService(filters, queries);
 
     res.status(200).json({
       status: 'success',
