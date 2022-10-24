@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Schema.Types;
 
-// schema design
 const productSchema = mongoose.Schema(
   {
     name: {
@@ -8,6 +8,7 @@ const productSchema = mongoose.Schema(
       required: [true, 'Please provide a name for this product.'],
       trim: true,
       unique: [true, 'Name must be unique'],
+      lowercase: true,
       minLength: [3, 'Name must be at least 3 characters.'],
       maxLength: [100, 'Name is too large'],
     },
@@ -15,57 +16,53 @@ const productSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    price: {
-      type: Number,
-      required: true,
-      min: [0, "Price can't be negative value."],
-    },
     unit: {
       type: String,
       required: true,
       enum: {
-        values: ['kg', 'litre', 'ml', 'gm', 'pcs'],
-        message: "Unit value can't be {VALUE}, must be kg/litre/ml/gm/pcs",
+        values: ['kg', 'litre', 'ml', 'gm', 'pcs', 'bag'],
+        message: "Unit value can't be {VALUE}, must be kg/litre/ml/gm/pcs/bag",
       },
     },
-    quantity: {
-      type: Number,
-      required: true,
-      min: [0, "Quantity can't be negative"],
-      validate: {
-        validator: (value) => {
-          const isInteger = Number.isInteger(value);
-          if (isInteger) {
-            return true;
-          } else {
-            return false;
-          }
+
+    imageURLs: [
+      {
+        type: String,
+        required: true,
+        validate: {
+          validator: () => {
+            if (!Array.isArray(value)) {
+              return false;
+            }
+            let isValid = true;
+            value.foreach((url) => {
+              if (!validator.isURL(url)) {
+                isValid = false;
+              }
+            });
+            return isValid;
+          },
+          message: 'Please provide valid image urls',
         },
       },
-      message: 'Quantity must be an integer',
-    },
-    status: {
+    ],
+
+    category: {
       type: String,
       required: true,
-      enum: {
-        values: ['in-stock', 'out-of-stock', 'discontinued'],
-        message:
-          "Status can't be {VALUE}, it should be in-stock/out-of-stock/discontinued",
+    },
+
+    brand: {
+      name: {
+        type: String,
+        required: true,
+      },
+      id: {
+        type: ObjectId,
+        ref: 'Brand',
+        required: true,
       },
     },
-    // supplier: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'Supplier',
-    // },
-    // categories: [
-    //   {
-    //     name: {
-    //       type: String,
-    //       required: true,
-    //     },
-    //     _id: mongoose.Schema.Types.ObjectId,
-    //   },
-    // ],
   },
   {
     timestamps: true,
@@ -73,22 +70,18 @@ const productSchema = mongoose.Schema(
 );
 
 // mongoose middleware for saving data: pre / post
-
 productSchema.pre('save', function (next) {
   if (this.quantity == 0) {
     this.status = 'out-of-stock';
   }
-
   next();
 });
 
-productSchema.post('save', function (doc, next) {
-  console.log('After saving data');
+// productSchema.post('save', function (doc, next) {
+//   console.log('After saving data');
+//   next();
+// });
 
-  next();
-});
-
-// Model
 const Product = mongoose.model('Product', productSchema);
 
 module.exports = Product;
