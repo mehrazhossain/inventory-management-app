@@ -22,6 +22,11 @@ const storeSchema = mongoose.Schema(
         ],
         message: '{VALUE} is not a valid name',
       },
+      id: {
+        type: ObjectId,
+        required: true,
+        ref: 'Store',
+      },
     },
     manager: {
       name: String,
